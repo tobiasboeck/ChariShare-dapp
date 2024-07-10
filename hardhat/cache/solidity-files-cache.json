@@ -1,0 +1,115 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/Users/tobiasboeck/Desktop/Chari-dapp/hardhat/contracts/CrowdCollab.sol": {
+      "lastModificationDate": 1720508963723,
+      "contentHash": "db9143cf5b158f6e22d4cacff9a6fdd8",
+      "sourceName": "contracts/CrowdCollab.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.22"
+      ],
+      "artifacts": [
+        "CrowdCollab"
+      ]
+    },
+    "/Users/tobiasboeck/Desktop/Chari-dapp/hardhat/contracts/ProjectCreator.sol": {
+      "lastModificationDate": 1720508997749,
+      "contentHash": "eb5ef25a34bd06d84de15eb77f13ba22",
+      "sourceName": "contracts/ProjectCreator.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./CrowdCollab.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.22"
+      ],
+      "artifacts": [
+        "CampaignCreator"
+      ]
+    },
+    "/Users/tobiasboeck/Desktop/Chari-dapp/hardhat/contracts/Lock.sol": {
+      "lastModificationDate": 1720508979223,
+      "contentHash": "dacf0d5cb5b45dc83086de5bc1c26c2c",
+      "sourceName": "contracts/Lock.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "Lock"
+      ]
+    }
+  }
+}
