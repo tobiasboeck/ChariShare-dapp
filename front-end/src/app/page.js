@@ -1,15 +1,18 @@
 "use client";
 import dotenv from "dotenv";
+
 dotenv.config();
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import Web3 from "web3";
 import campaignCreatorArtifact from "../../../hardhat/artifacts/contracts/ProjectCreator.sol/CampaignCreator.json";
 import CampaignInteraction from "@/app/components/CampaignInteraction";
 import Chari from "../../public/Chari.png";
 import Image from "next/image";
-import Toast, { ToastContent, ToastIconType } from "@/app/components/Toast";
-import { Bar } from "react-chartjs-2";
-import { Chart, registerables } from "chart.js";
+import axios from "axios";
+import Toast, {ToastContent, ToastIconType} from "@/app/components/Toast";
+import {Bar} from "react-chartjs-2";
+import {Chart, registerables} from "chart.js";
+
 Chart.register(...registerables);
 
 const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
@@ -26,14 +29,17 @@ export default function Home() {
     const [showToast, setShowToast] = useState(false);
     const [content, setContent] = useState(0);
     const [iconType, setIconType] = useState(ToastIconType.info);
+    const [walletBalance, setWalletBalance] = useState(0); // State to hold wallet balance
+    const [walletBalanceEuro, setWalletBalanceEuro] = useState(0); // State to hold wallet balance in Euro
 
-    const connectMetaMask = async () => {};
+    const connectMetaMask = async () => {
+    };
 
     const handleConnectButtonClick = async () => {
         if (window.ethereum) {
             const web3Instance = new Web3(window.ethereum);
             try {
-                await window.ethereum.request({ method: "eth_requestAccounts" });
+                await window.ethereum.request({method: "eth_requestAccounts"});
                 // Initialize your contract
                 const contractABI = campaignCreatorArtifact.abi;
                 const contractInstance = new web3Instance.eth.Contract(
@@ -140,7 +146,7 @@ export default function Home() {
             const deployedCampaigns = await contract.methods
                 .getDeployedCampaigns()
                 .call();
-            console.log("Deployed Campaigns:", deployedCampaigns);
+            //console.log("Deployed Campaigns:", deployedCampaigns);
             setDeployedCampaigns(deployedCampaigns);
         } catch (error) {
             console.error("Error fetching deployed campaigns:", error);
@@ -198,6 +204,27 @@ export default function Home() {
         }
     };
 
+    const getWalletBalance = async (walletAddress) => {
+        if (!contract) return;
+        try {
+            const balance = await contract.methods.getWalletBalance(walletAddress).call();
+            setWalletBalance(balance);
+            console.log("Wallet Balance:", balance);
+            // Convert balance to Ether
+            const balanceInEther = web3.utils.fromWei(balance, 'ether');
+            // Fetch ETH to Euro conversion rate
+            const response = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=eur');
+            const ethToEurRate = response.data.ethereum.eur;
+            // Convert balance to Euro
+            const balanceInEuro = balanceInEther * ethToEurRate;
+            setWalletBalanceEuro(balanceInEuro);
+            console.log("Wallet Balance in Euro:", balanceInEuro);
+        } catch (error) {
+            console.error("Error fetching wallet balance:", error);
+        }
+    };
+
+
     return (
         <>
             <Toast show={showToast} setShow={setShowToast} content={content}/>
@@ -216,7 +243,7 @@ export default function Home() {
                             <div className="flex flex-col items-center justify-center">
                                 <p>Click here to connect your MetaMask wallet</p>
                                 <button onClick={handleConnectButtonClick}
-                                        className="bg-violet-600 p-2 rounded-lg my-4 hover:bg-violet-600/50">
+                                        className="transition ease-in-out delay-150 bg-violet-600 rounded-lg p-2 my-4 hover:-translate-y-1 hover:scale-110 hover:bg-indigo-500 duration-300">
                                     Connect MetaMask
                                 </button>
                             </div>
@@ -259,15 +286,20 @@ export default function Home() {
                         </div>
                         <div className="my-10 bg-gray-600 p-4 rounded-lg">
                             <h2 className="text-xl mb-4">Campaign Creation:</h2>
+                            <p className="text-center my-4 bg-gray-800 p-2 w-1/4 mx-auto rounded-lg text-violet-300">
+                                {minContributionETH} ETH | <em>(1 eth = 10^18 wei)</em>
+                            </p>
                             <div className="flex flex-col space-y-2.5">
                                 <input
-                                    className="p-2 bg-gray-300 rounded-lg text-black placeholder:text-gray-600 focus:outline-none focus:border-violet-600 border-2 border-transparent"                                    type="text"
+                                    className="p-2 bg-gray-300 rounded-lg text-black placeholder:text-gray-600 focus:outline-none focus:border-violet-600 border-2 border-transparent"
+                                    type="text"
                                     placeholder="Description / title"
                                     value={description}
                                     onChange={handleDescriptionChange}
                                 />
                                 <input
-                                    className="p-2 bg-gray-300 rounded-lg text-black placeholder:text-gray-600 focus:outline-none focus:border-violet-600 border-2 border-transparent"                                    type="text"
+                                    className="p-2 bg-gray-300 rounded-lg text-black placeholder:text-gray-600 focus:outline-none focus:border-violet-600 border-2 border-transparent"
+                                    type="text"
                                     type="number"
                                     placeholder="Min Contrib (wei)"
                                     value={minContribution}
@@ -279,9 +311,6 @@ export default function Home() {
                                 </button>
                             </div>
                         </div>
-                        <p style={{textAlign: "center", fontSize: "smaller"}}>
-                            {minContributionETH} ETH | <em>(1 eth = 10^18 wei)</em>
-                        </p>
                     </>
                 )}
                 {/* Display deployed campaigns */}

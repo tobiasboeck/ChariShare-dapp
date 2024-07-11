@@ -2,6 +2,7 @@
 import React, {useEffect, useState} from "react";
 import Web3 from "web3";
 import crowdCollabArtifact from "../../../../hardhat/artifacts/contracts/CrowdCollab.sol/CrowdCollab.json";
+import axios from "axios";
 
 const contractAbi = crowdCollabArtifact.abi;
 const CampaignInteraction = ({contractAddress, web3}) => {
@@ -9,6 +10,8 @@ const CampaignInteraction = ({contractAddress, web3}) => {
     const [campaignDescription, setCampaignDescription] = useState("");
     const [manager, setManager] = useState("");
     const [minimumContribution, setMinimumContribution] = useState(0);
+    const [minimumContributionInETH, setMinimumContributionInETH] = useState(0);
+    const [minimumContributionInEuro, setMinimumContributionInEuro] = useState(0);
     const [numberSupporters, setNumberSupporters] = useState(0);
     const [requests, setRequests] = useState([]);
     const [contributionAmount, setContributionAmount] = useState("");
@@ -24,7 +27,6 @@ const CampaignInteraction = ({contractAddress, web3}) => {
             const instance = new web3.eth.Contract(contractAbi, contractAddress);
             setContractInstance(instance);
         }
-
     }, [contractAddress, web3]);
 
     useEffect(() => {
@@ -33,12 +35,12 @@ const CampaignInteraction = ({contractAddress, web3}) => {
                 if (contractInstance) {
                     const description = await contractInstance.methods.campaignDescription().call();
                     const managerAddress = await contractInstance.methods.manager().call();
-                    const minimumContribution = await contractInstance.methods.minimumContribution().call();
+                    const minContribution = await contractInstance.methods.minimumContribution().call();
                     const numSupporters = await contractInstance.methods.numberSupporters().call();
 
                     setCampaignDescription(description);
                     setManager(managerAddress);
-                    setMinimumContribution(minimumContribution);
+                    setMinimumContribution(minContribution);
                     setNumberSupporters(numSupporters);
 
                     const requestsCount = await contractInstance.methods.getRequestsCount().call();
@@ -51,6 +53,16 @@ const CampaignInteraction = ({contractAddress, web3}) => {
 
                     const contractBalance = await web3.eth.getBalance(contractInstance.options.address);
                     setContractBalance(contractBalance);
+
+                    // Convert minimumContribution to ETH and EUR
+                    const minContributionInETH = web3.utils.fromWei(minContribution, 'ether');
+                    setMinimumContributionInETH(minContributionInETH);
+
+                    const response = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=eur');
+                    const ethToEurRate = response.data.ethereum.eur;
+                    const minContributionInEuro = minContributionInETH * ethToEurRate;
+                    setMinimumContributionInEuro(minContributionInEuro);
+
                 }
             } catch (error) {
                 console.error("Error getting contract summary:", error);
@@ -59,14 +71,13 @@ const CampaignInteraction = ({contractAddress, web3}) => {
         getSummary();
     }, [contractInstance, web3]);
 
-
     const handleContribution = async () => {
         try {
             if (!window.ethereum) {
                 console.error("MetaMask extension not detected");
                 return;
             }
-            await window.ethereum.request({method: "eth_requestAccounts"});
+            await window.ethereum.request({ method: "eth_requestAccounts" });
             const web3Instance = new Web3(window.ethereum);
             const accounts = await web3Instance.eth.getAccounts();
             const senderAddress = accounts[0];
@@ -91,7 +102,7 @@ const CampaignInteraction = ({contractAddress, web3}) => {
                 console.error("MetaMask extension not detected");
                 return;
             }
-            await window.ethereum.request({method: "eth_requestAccounts"});
+            await window.ethereum.request({ method: "eth_requestAccounts" });
             const web3Instance = new Web3(window.ethereum);
             const accounts = await web3Instance.eth.getAccounts();
             const senderAddress = accounts[0];
@@ -103,7 +114,7 @@ const CampaignInteraction = ({contractAddress, web3}) => {
                 requestDescription,
                 web3Instance.utils.toWei(requestAmount, 'ether'),
                 requestRecipient
-            ).send({from: senderAddress, gasPrice: gasPrice});
+            ).send({ from: senderAddress, gasPrice: gasPrice });
         } catch (error) {
             console.error("Error creating request:", error);
         }
@@ -111,7 +122,7 @@ const CampaignInteraction = ({contractAddress, web3}) => {
 
     const approveRequest = async (requestId) => {
         try {
-            await window.ethereum.request({method: "eth_requestAccounts"});
+            await window.ethereum.request({ method: "eth_requestAccounts" });
             const web3Instance = new Web3(window.ethereum);
             const accounts = await web3Instance.eth.getAccounts();
             const senderAddress = accounts[0];
@@ -130,7 +141,7 @@ const CampaignInteraction = ({contractAddress, web3}) => {
 
     const finalizeRequest = async (requestId) => {
         try {
-            await window.ethereum.request({method: "eth_requestAccounts"});
+            await window.ethereum.request({ method: "eth_requestAccounts" });
             const web3Instance = new Web3(window.ethereum);
             const accounts = await web3Instance.eth.getAccounts();
             const senderAddress = accounts[0];
@@ -149,105 +160,103 @@ const CampaignInteraction = ({contractAddress, web3}) => {
 
     const contributionAmountETH = contributionAmount / 10 ** 18;
     const requestAmountETH = requestAmount / 10 ** 18;
-
     return (
         <div>
-            <div className="grid grid-cols-3">
+            <div className="grid grid-cols-3 gap-4">
                 <div
-                    className="bg-gray-700 rounded-lg p-4 space-y-2.5 m-4 text-white border-transparent hover:border-2 hover:border-violet-600 border-2">
+                    className="bg-gray-700 rounded-lg p-4 space-y-2.5 text-white border-transparent hover:border-2 hover:border-violet-600 border-2">
                     <h5 className="font-bold">Description:</h5>
-                    <h2>
-                        {campaignDescription}
-                    </h2>
+                    <h2>{campaignDescription}</h2>
                 </div>
                 <div
-                    className="bg-gray-700 rounded-lg p-4 space-y-2.5 m-4 text-white border-transparent hover:border-2 hover:border-violet-600 border-2">
+                    className="bg-gray-700 rounded-lg p-4 space-y-2.5 text-white border-transparent hover:border-2 hover:border-violet-600 border-2">
                     <h5 className="font-bold">Campaign Manager:</h5>
-                    <p style={{wordBreak: "break-all"}}>
-                        {manager}
-                    </p>
+                    <p style={{wordBreak: "break-all"}}>{manager}</p>
                 </div>
                 <div
-                    className="bg-gray-700 rounded-lg p-4 space-y-2.5 m-4 text-white border-transparent hover:border-2 hover:border-violet-600 border-2">
-                    <h5 className="font-bold">Minimum Contribution en wei:</h5>
-                    <p style={{wordBreak: "break-all"}}>
-                        {minimumContribution.toString()}
-                    </p>
+                    className="bg-gray-700 rounded-lg p-4 space-y-2.5 text-white border-transparent hover:border-2 hover:border-violet-600 border-2">
+                    <h5 className="font-bold">Contract Balance in wei:</h5>
+                    <p style={{wordBreak: "break-all"}}>{contractBalance.toString()}</p>
                 </div>
                 <div
-                    className="bg-gray-700 rounded-lg p-4 space-y-2.5 m-4 text-white border-transparent hover:border-2 hover:border-violet-600 border-2">
-                    <h5 className="font-bold">Contract Balance en wei:</h5>
-                    <p style={{wordBreak: "break-all"}}>
-                        {contractBalance.toString()}
-                    </p>
-                </div>
-                <div
-                    className="bg-gray-700 rounded-lg p-4 space-y-2.5 m-4 text-white border-transparent hover:border-2 hover:border-violet-600 border-2">
+                    className="col-span-3 bg-gray-700 rounded-lg p-4 space-y-2.5 text-white border-transparent hover:border-2 hover:border-violet-600 border-2">
                     <h5 className="font-bold">Number of Supporters:</h5>
-                    <p>
-                        {numberSupporters.toString()}
-                    </p>
+                    <p>{numberSupporters.toString()}</p>
                 </div>
                 <div
-                    className="bg-gray-700 rounded-lg p-4 space-y-2.5 m-4 text-white border-transparent hover:border-2 hover:border-violet-600 border-2">
+                    className="col-span-3 bg-gray-700 rounded-lg p-4 space-y-2.5 text-white border-transparent hover:border-2 hover:border-violet-600 border-2">
                     <h5 className="font-bold">Number of Requests:</h5>
-                    <p>
-                        {requests.length}
-                    </p>
+                    <p>{requests.length}</p>
                 </div>
-
+                <div
+                    className="col-span-3 bg-gray-700 rounded-lg p-4 space-y-2.5 text-white border-transparent hover:border-2 hover:border-violet-600 border-2 mb-4">
+                    <h5 className="font-bold">Minimum Contribution in wei:</h5>
+                    <p style={{wordBreak: "break-all"}}>{minimumContribution.toString()}</p>
+                    <h5 className="font-bold">Minimum Contribution in ETH:</h5>
+                    <p>{minimumContributionInETH} ETH</p>
+                    <h5 className="font-bold">Minimum Contribution in Euro:</h5>
+                    <p>{minimumContributionInEuro.toFixed(2)} EUR</p>
+                </div>
             </div>
 
-            {/*       {requests.map((request, index) => (
-                <div key={index}>
-                    <div className="bg-gray-400 h-[1px]"></div>
-                    <div>
+            {
+                requests.map((request, index) => (
+                    <div key={index}>
+                        <div className="bg-gray-400 h-[1px]"></div>
+                        <div className="bg-gray-700 rounded-lg p-4 mt-4  border-transparent hover:border-2 hover:border-violet-600 border-2">
+                            <div>
+                                <h4 className="font-bold text-lg">Request {index + 1}:</h4>
+                            </div>
+                            <div className="my-4">
+                                <h5>Description:</h5>
+                                <p>
+                                    <strong>{request.description}</strong>
+                                </p>
+                            </div>
+                            <div className="my-4">
+                                <h5>Amount:</h5>
+                                <p>
+                                    <strong>{web3.utils.fromWei(request.amount, 'ether')}</strong>
+                                </p>
+                            </div>
+                            <div>
+                                <h5>Recipient Address:</h5>
+                                <p>
+                                    <strong>{request.recipient}</strong>
+                                </p>
+                            </div>
+                            <div className="my-4">
+                                <h5>Finalized status:</h5>
+                                <p>
+                                    <strong>{request.complete.toString()}</strong>
+                                </p>
+                            </div>
+                            <div className="flex flex-col">
+                                <button onClick={() => approveRequest(index)} className="bg-violet-600 rounded-lg p-2 my-2 hover:bg-violet-600/50">
+                                    Approve <span>&#x2714;</span>
+                                </button>
 
-            <h4>Request {index + 1}:</h4>
-        </div>
-    <div>
-        <h5>Description:</h5>
-        <p>
-            <strong>{request.description}</strong>
-        </p>
-    </div>
-    <div>
-        <h5>Amount:</h5>
-        <p>
-            <strong>{request.amount.toString()}</strong>
-        </p>
-    </div>
-    <div>
-        <h5>Recipient Address:</h5>
-        <p>
-            <strong>{request.recipient}</strong>
-        </p>
-    </div>
-    <div>
-        <h5>Finalized status:</h5>
-        <p>
-            <strong>{request.complete.toString()}</strong>
-        </p>
-    </div>
+                                <button onClick={() => finalizeRequest(index)} className="bg-violet-600 rounded-lg p-2 my-2 hover:bg-violet-600/50">
+                                    Finalize <span>&#x1F389;</span>
+                                </button>
 
-    <button onClick={() => approveRequest(index)}>
-        Approve <span>&#x2714;</span>
-    </button>
+                            </div>
 
-    <button onClick={() => finalizeRequest(index)}>
-        Finalize <span>&#x1F389;</span>
-    </button>
 
-    <div>
-        <em style={{fontSize: "smaller", wordBreak: "keep-all"}}>
-            To finalize a request, the number of approvals must exceed
-            the total supporters.
-        </em></div>
-</div>
-))} */}
+                            <div>
+                                <em style={{fontSize: "smaller", wordBreak: "keep-all"}}>
+                                    To finalize a request, the number of approvals must exceed
+                                    the total supporters.
+                                </em></div>
+                        </div>
 
-            {/* Input field for contribution amount */}
-            <div className="bg-gray-400 h-[1px]"></div>
+                    </div>
+                ))
+            }
+
+            {/* Input field for contribution amount */
+            }
+            <div className="bg-gray-400 h-[1px] mt-4"></div>
             <div className="my-8">
                 <h4 className="font-bold text-xl">Support Campaign:</h4>
                 <div className="flex flex-col my-4 space-y-2.5">

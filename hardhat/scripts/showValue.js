@@ -8,8 +8,6 @@ async function main() {
         "0x9F169F78e192dd93a1E230895BEE5571b5cd47a7"
     );
 
-    console.log(campaignCreator);
-
     // Call contract functions
     const result = await campaignCreator.createCampaign(1000000, "CampaignName"); // Example function call
     console.log(result)

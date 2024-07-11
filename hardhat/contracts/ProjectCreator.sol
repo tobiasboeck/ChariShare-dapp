@@ -27,4 +27,13 @@ participate in the campaign
     {
         return campaigns;
     }
+
+    /**
+ * @dev Get the current balance of the wallet
+     * @param wallet The address of the wallet to check balance
+     * @return balance The current balance of the wallet
+     */
+    function getWalletBalance(address wallet) public view returns (uint256) {
+        return wallet.balance;
+    }
 }
